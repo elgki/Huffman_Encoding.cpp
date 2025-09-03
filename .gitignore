@@ -1,0 +1,13 @@
+# Ignore build outputs / binaries
+*.exe
+*.o
+*.out
+*.obj
+
+# Ignore IDE/editor files
+.vscode/
+*.log
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
