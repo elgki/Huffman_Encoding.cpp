@@ -3,16 +3,8 @@
 #include <vector>
 #include <unordered_map>
 #include <fstream>
-using namespace std;
-//represents the Huffman tree node
-class T_node{
-public:
-    char ch;
-    int freq;
-    T_node* right;
-    T_node* left;
-    T_node(char c, int f) : ch(c), freq(f), left(nullptr), right(nullptr) {}
-};
+#include "huffman.hpp"
+
 //compares T_node elements for min priority queue
 class Compare{
 public:
@@ -20,16 +12,10 @@ public:
         return a->freq > b->freq;              //comparison needed to determine the less frequent symbol
     }
 };
-/*assign_Huffman_codes
-parameters: 
--r: root of Huffman tree, 
--str: empty string to add 0 and/or 1
--h_code: unordered map <char,string> for each symbol and its binary code equivalent
-function:
--starting from the root node, recursively assign:
+/*starting from the root node, recursively assign:
 0 -> left branches
 1 -> right branches*/
-void assign_Huffman_codes(T_node* r, string str, unordered_map<char,string>& h_code){
+void assign_Huffman_codes(T_node* r, std::string str, std::unordered_map<char,std::string>& h_code){
     if(r == nullptr){                       //check if tree is empty
         return;
     }
@@ -44,25 +30,23 @@ parameters:
 -f_name: name of the original .txt file
 -h_code: resulting unordered map after the code assignments to each character
 function:
--prints the resulting encoded string*/
-void print_encoded_res(const string f_name, unordered_map<char,string>& h_code){
+-prints the resulting encoded string
+-returns the resulting string*/
+std::string print_encoded_res(const std::string f_name, std::unordered_map<char,std::string>& h_code){
     std::ifstream ifs;
     ifs.open(f_name,std::ifstream::in);
     if (!ifs.is_open()) {
-        cerr << "Unable to open file: " << f_name << '\n';
-        return;
+        std::cerr << "Unable to open file: " << f_name << '\n';
     }
-    string encoded_text = "";
+    std::string encoded_text = "";
     char c ;
     while (ifs.get(c)){
         encoded_text += h_code[c];
     }
-    cout << "Encoded text:\n" << encoded_text << '\n';
+    std::cout << "Encoded text:\n" << encoded_text << '\n';
+    return encoded_text;
 }
-/*free_tree
--r: root of Huffman tree
-function:
--deallocate memory used by the Huffman tree*/
+/*free Huffman tree*/
 void free_Tree(T_node* r){
     if(r!=nullptr){
         free_Tree(r->left);
@@ -73,20 +57,13 @@ void free_Tree(T_node* r){
         return;
     }
 }
-/*create_Huffman_Tree
-parameters:
--f_map: input unordered map of <character,frequency> pairings
--fname: name of original .txt file to be encoded
-function:
--create a min priority queue(minheap) to store unordered map pairings
+/*-create a min priority queue(minheap) to store unordered map pairings
 -while there are more than 1 elements in the queue, "remove" the first 2, highest priority nodes
  (minimum frequency) and attach them to a parent node with a combined frequency
--push the parent node
 -make top of the priority queue the root of the Huffman tree
--assign Huffman codes to every branch
--print resulting string*/
-void create_Huffman_Tree(const unordered_map<char,int>f_map,const string fname){
-    priority_queue<T_node*,vector<T_node*>,Compare> min_pq;     //create an empty priority queue
+-returns the root node*/
+T_node* create_Huffman_Tree(const std::unordered_map<char,int>f_map){
+    std::priority_queue<T_node*,std::vector<T_node*>,Compare> min_pq;     //create an empty priority queue
     for (auto p : f_map){                                       //insert each pair from the map in the queue
         min_pq.push(new T_node(p.first, p.second));
     }
@@ -100,15 +77,40 @@ void create_Huffman_Tree(const unordered_map<char,int>f_map,const string fname){
         parent->left = left;
         parent->right = right;
 
-        min_pq.push(parent);
+        min_pq.push(parent);                        //push parent node
     }
-    T_node* root = min_pq.top();            //root of Huffman tree
-    unordered_map<char,string>h_code;       //create a new map to store pairings of <character,encoding>
+    T_node* root = min_pq.top();                   //root of Huffman tree
+    return root;
+}
+/*-create an unordered map of <char,string> pairings,
+demonstrating the symbol-binary code mappings
+-assigns huffman codes
+-returns the unordered_map */
+std::unordered_map<char,std::string> create_encoding_map(T_node* root){
+    std::unordered_map<char,std::string>h_code;       //create a new map to store pairings of <character,encoding>
     assign_Huffman_codes(root, "",h_code);  //assigns Huffman codes to each character
-    cout << "Huffman Codes:\n";
+    std::cout << "Huffman Codes:\n";
     for (auto i : h_code) {
-        cout << i.first << " " << i.second << "\n";
+        std::cout << i.first << " " << i.second << "\n";
     }
-    print_encoded_res(fname,h_code);        //prints the result
-    free_Tree(root);
+    return h_code;
+}
+/*decodes the encoded string and returns the result*/
+std::string decode_text(T_node* root, const std::string& c_str){
+    std::string decoded_str;
+    T_node* curr = root;
+    for(char c : c_str){
+        if (c == '0'){
+            curr = curr->left;
+        }
+        else{
+            curr =  curr->right;
+        }
+        if(!curr->left && !curr->right){
+            decoded_str.push_back(curr->ch);
+            curr = root;
+
+        }
+    }
+    return decoded_str;
 }

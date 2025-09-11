@@ -5,7 +5,7 @@
 *.obj
 
 # Ignore IDE/editor files
-.vscode/
+#.vscode/
 *.log
 
 # Ignore OS files
